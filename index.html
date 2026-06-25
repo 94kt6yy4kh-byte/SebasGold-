@@ -612,9 +612,7 @@
         } else {
             document.getElementById("valorFinalDisplay").innerText = "USD$ " + valorFinal.toFixed(2).toLocaleString('en-US');
         }
-    }
-
-    function calcularDensidad() {
+    }   function calcularDensidad() {
         const seco = parseFloat(document.getElementById("pesoSeco").value) || 0;
         const agua = parseFloat(document.getElementById("pesoAgua").value) || 0;
         const vBox = document.getElementById("veredictoBox");
@@ -625,24 +623,49 @@
             return;
         }
 
+        // 1. Cálculo de la densidad real
         const densidad = seco / (seco - agua);
         document.getElementById("densidadDisplay").innerText = densidad.toFixed(2) + " g/cm³";
         vBox.style.display = "block";
 
-        if (densidad >= 19.0 && densidad <= 19.5) {
-            vBox.innerText = "✅ EXCELENTE: COMPATIBLE CON ORO PURO (24K)";
+        // 2. Fórmula matemática para estimar el kilataje exacto basado en la densidad
+        // Tomamos como referencia: 24K = 19.32 g/cm³ y 10K = 11.60 g/cm³
+        let kilatajeExacto = 10 + ((densidad - 11.60) / (19.32 - 11.60)) * (24 - 10);
+        
+        // Limitar los rangos lógicos (mínimo 0K, máximo 24K)
+        if (kilatajeExacto > 24) kilatajeExacto = 24;
+        if (kilatajeExacto < 0) kilatajeExacto = 0;
+
+        // 3. Ajustar automáticamente el input de kilataje en la pestaña de Compra
+        // Lo redondeamos a 1 decimal para que sea comercialmente viable (ej: 14.2K o 18.0K)
+        const kFinal = parseFloat(kilatajeExacto.toFixed(1));
+        document.getElementById("kilataje").value = kFinal;
+
+        // Re-calcular los valores de compra inmediatamente con el nuevo kilataje
+        calcularTodo();
+
+        // 4. Desplegar veredicto dinámico profesional
+        if (densidad >= 19.1) {
+            vBox.innerText = `✅ COMPATIBLE CON ORO PURO (~${kFinal}K). Densidad excelente.`;
             vBox.style.cssText = "display:block; background:rgba(46,204,113,0.1); border:1px solid var(--exito); color:var(--exito);";
-        } else if (densidad >= 14.7 && densidad <= 15.6) {
-            vBox.innerText = "✅ CORRECTO: COMPATIBLE CON ORO DE 18K";
+        } else if (densidad >= 14.7 && densidad <= 15.7) {
+            vBox.innerText = `✅ COMPATIBLE CON ORO DE 18K (~${kFinal}K). Rango estándar correcto.`;
             vBox.style.cssText = "display:block; background:rgba(46,204,113,0.1); border:1px solid var(--exito); color:var(--exito);";
-        } else if (densidad >= 18.5 && densidad < 19.0) {
-            vBox.innerText = "🚨 CUIDADO: Densidad sospechosa. ¡Posible núcleo de Tungsteno!";
+        } else if (densidad >= 12.9 && densidad < 14.7) {
+            vBox.innerText = `👍 COMPATIBLE CON ORO DE 14K (~${kFinal}K). Densidad típica de ley.`;
+            vBox.style.cssText = "display:block; background:rgba(52,152,219,0.1); border:1px solid #3498db; color:#3498db;";
+        } else if (densidad >= 18.2 && densidad <= 18.9) {
+            vBox.innerText = `🚨 ALERTA CRÍTICA: Densidad sospechosa (${densidad.toFixed(2)} g/cm³). ¡Muy alta para 18K pero baja para 24K. Posible núcleo pesado (Tungsteno)!`;
+            vBox.style.cssText = "display:block; background:rgba(231,76,60,0.1); border:1px solid var(--alerta); color:var(--alerta);";
+        } else if (densidad < 11.0) {
+            vBox.innerText = `❌ RECHAZADO: Kilataje estimado (~${kFinal}K). Demasiado bajo, no clasifica como oro comercial.`;
             vBox.style.cssText = "display:block; background:rgba(231,76,60,0.1); border:1px solid var(--alerta); color:var(--alerta);";
         } else {
-            vBox.innerText = "❌ ALERTA: Densidad fuera de rango de oro real.";
-            vBox.style.cssText = "display:block; background:rgba(231,76,60,0.1); border:1px solid var(--alerta); color:var(--alerta);";
+            vBox.innerText = `📊 KILATAJE ESTIMADO: ~${kFinal}K. Proceda con pruebas ácidas de respaldo.`;
+            vBox.style.cssText = "display:block; background:rgba(243,156,18,0.1); border:1px solid var(--advertencia); color:var(--advertencia);";
         }
     }
+
 
     function generarPDFRecibo() {
         const { jsPDF } = window.jspdf;
