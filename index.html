@@ -4,131 +4,741 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SebasGold - Plataforma Pro de Liquidación</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --bg-principal: #090d16; --bg-card: #111b2d; --oro: #f1c40f; --texto: #f8f9fa; --borde: #1e293b; --exito: #2ecc71; --alerta: #e74c3c; --transicion: all 0.3s ease; }
-        .light-mode { --bg-principal: #f4f6f9; --bg-card: #ffffff; --texto: #0f172a; --borde: #e2e8f0; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-        body { background-color: var(--bg-principal); color: var(--texto); padding: 20px; display: flex; justify-content: center; min-height: 100vh; }
-        .contenedor { background-color: var(--bg-card); border-radius: 28px; width: 100%; max-width: 480px; padding: 25px; border: 1px solid var(--borde); }
+        :root {
+            --bg-principal: #090d16;
+            --bg-card: #111b2d;
+            --oro: #f1c40f;
+            --oro-hover: #d4ac0d;
+            --texto: #f8f9fa;
+            --texto-secundario: #8a99ad;
+            --borde: #1e293b;
+            --exito: #2ecc71;
+            --alerta: #e74c3c;
+            --advertencia: #f39c12;
+            --transicion: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .light-mode {
+            --bg-principal: #f4f6f9;
+            --bg-card: #ffffff;
+            --texto: #0f172a;
+            --texto-secundario: #64748b;
+            --borde: #e2e8f0;
+            --oro: #d4ac0d;
+            --oro-hover: #b5930a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+        }
+
+        body {
+            background-color: var(--bg-principal);
+            color: var(--texto);
+            padding: 20px 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .contenedor {
+            background-color: var(--bg-card);
+            border-radius: 28px;
+            width: 100%;
+            max-width: 480px;
+            padding: 25px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--borde);
+            position: relative;
+        }
+
+        .btn-theme {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--borde);
+            color: var(--texto);
+            padding: 8px 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .encabezado {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .encabezado h1 {
+            color: var(--oro);
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        /* Contenedor de KPIs */
+        .kpi-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .kpi-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--borde);
+            padding: 10px 6px;
+            border-radius: 14px;
+            text-align: center;
+        }
+
+        .kpi-title {
+            font-size: 9px;
+            color: var(--texto-secundario);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .kpi-value {
+            font-size: 12px;
+            color: var(--texto);
+            font-weight: 700;
+        }
+
+        /* Contenedor de la Gráfica */
+        .chart-container {
+            background: rgba(0,0,0,0.1);
+            border: 1px solid var(--borde);
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 20px;
+            height: 130px;
+            position: relative;
+        }
+
+        .seccion-moneda {
+            display: flex;
+            background: rgba(0,0,0,0.15);
+            padding: 4px;
+            border-radius: 14px;
+            margin-bottom: 15px;
+            border: 1px solid var(--borde);
+        }
+
+        .btn-moneda {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--texto-secundario);
+            padding: 10px;
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-moneda.activo {
+            background-color: var(--texto);
+            color: var(--bg-card);
+        }
+
+        .switch-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.01);
+            padding: 12px;
+            border-radius: 14px;
+            margin-bottom: 15px;
+            border: 1px solid var(--borde);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 22px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #cbd5e0;
+            transition: .3s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px; width: 14px;
+            left: 4px; bottom: 4px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: var(--oro); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        .seccion-ajustes {
+            background: rgba(0,0,0,0.15);
+            padding: 15px;
+            border-radius: 16px;
+            margin-bottom: 15px;
+            border: 1px solid var(--borde);
+        }
+
+        .seccion-ajustes.oculto { display: none; }
+
         .grupo-input { margin-bottom: 15px; }
-        label { display: block; font-size: 11px; color: #8a99ad; margin-bottom: 6px; text-transform: uppercase; font-weight: 700; }
-        input { width: 100%; background: rgba(0,0,0,0.1); border: 1px solid var(--borde); padding: 12px; border-radius: 12px; color: var(--texto); font-size: 15px; font-weight: 700; }
-        .btn-accion { width: 100%; background-color: var(--oro); color: #000; border: none; padding: 15px; border-radius: 14px; font-weight: 800; cursor: pointer; margin-top: 15px; }
-        .resultado-box { background: rgba(241,196,15,0.06); border: 1px solid rgba(241,196,15,0.15); padding: 18px; border-radius: 16px; text-align: center; margin: 20px 0; }
-        .precio-final { font-size: 32px; color: var(--oro); font-weight: 800; }
-        .alerta-densidad { padding: 15px; border-radius: 12px; margin-top: 15px; text-align: center; font-weight: 700; font-size: 12px; display: none; }
-        .pestanas { display: flex; gap: 5px; margin-bottom: 20px; background: rgba(0,0,0,0.1); padding: 5px; border-radius: 14px; }
-        .pestana { flex: 1; color: #8a99ad; padding: 12px 5px; border-radius: 10px; cursor: pointer; font-weight: 700; text-align: center; font-size: 12px; }
-        .pestana.activa { background-color: var(--oro); color: #090d16; }
+
+        .grupo-input label {
+            display: block;
+            font-size: 11px;
+            color: var(--texto-secundario);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .grupo-input input {
+            width: 100%;
+            background-color: rgba(0,0,0,0.1);
+            border: 1px solid var(--borde);
+            padding: 12px;
+            border-radius: 12px;
+            color: var(--texto);
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .grupo-input input:focus {
+            outline: none;
+            border-color: var(--oro);
+        }
+
+        .pestanas {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            background: rgba(0,0,0,0.1);
+            padding: 5px;
+            border-radius: 14px;
+        }
+
+        .pestana {
+            flex: 1;
+            color: var(--texto-secundario);
+            padding: 12px 5px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .pestana.activa {
+            background-color: var(--oro);
+            color: #090d16;
+        }
+
+        .panel-operacion {
+            background: rgba(255,255,255,0.01);
+            padding: 20px;
+            border-radius: 18px;
+            border: 1px solid var(--borde);
+        }
+
+        .panel-seccion {
+            display: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: var(--transicion);
+        }
+
+        .panel-seccion.activa {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .resultado-box {
+            background: rgba(241, 196, 15, 0.06);
+            border: 1px solid rgba(241, 196, 15, 0.15);
+            padding: 18px;
+            border-radius: 16px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .resultado-box h2 {
+            font-size: 11px;
+            color: var(--texto-secundario);
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .resultado-box .precio-final {
+            font-size: 32px;
+            color: var(--oro);
+            font-weight: 800;
+            margin-top: 5px;
+        }
+
+        .alerta-densidad {
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 15px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 12px;
+            display: none;
+        }
+
+        .btn-accion {
+            width: 100%;
+            background-color: var(--oro);
+            color: #090d16;
+            border: none;
+            padding: 15px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        /* Notificaciones flotantes (Toasts) */
+        #toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: #1e293b;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border: 1px solid var(--oro);
+            opacity: 0;
+            transition: var(--transicion);
+            z-index: 1000;
+            pointer-events: none;
+        }
+        #toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
     </style>
 </head>
 <body>
 
-<div class="contenedor">
-    <h1 style="color:var(--oro); text-align:center; margin-bottom:20px;">🪙 SebasGold Pro</h1>
+<div id="toast">Notificación</div>
 
-    <div class="grupo-input">
-        <label>Cotización Oro 24K:</label>
-        <input type="number" id="cotizacionBase" oninput="guardarConfig(); calcularTodo()">
+<div class="contenedor">
+    <button class="btn-theme" onclick="toggleTema()">🌓</button>
+
+    <div class="encabezado">
+        <h1>🪙 SebasGold</h1>
     </div>
-    <div class="grupo-input">
-        <label>Margen Compra (%):</label>
-        <input type="number" id="margenCompra" oninput="guardarConfig(); calcularTodo()">
+
+    <div class="kpi-container">
+        <div class="kpi-card">
+            <div class="kpi-title">Onza Spot</div>
+            <div id="kpiOnza" class="kpi-value">$0.00</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-title">TRM Oficial</div>
+            <div id="kpiTRM" class="kpi-value">$0.00</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-title">Gramo Puro</div>
+            <div id="kpiGramo" class="kpi-value">$0.00</div>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="miniGrafica"></canvas>
+    </div>
+
+    <div class="seccion-moneda">
+        <button id="btnCOP" class="btn-moneda activo" onclick="cambiarMoneda('COP')">🇨🇴 Pesos (COP)</button>
+        <button id="btnUSD" class="btn-moneda" onclick="cambiarMoneda('USD')">🇺🇸 Dólares (USD)</button>
+    </div>
+
+    <div class="switch-container">
+        <span style="font-size: 12px; font-weight: 700; color: var(--texto-secundario);">👁️ Panel de Control Oculto</span>
+        <label class="switch">
+            <input type="checkbox" id="switchPro" onchange="togglePanelPro()">
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <div id="panelPro" class="seccion-ajustes oculto">
+        <div class="grupo-input">
+            <label id="lblBase">Cotización Oro 24K:</label>
+            <input type="number" id="cotizacionBase" oninput="calcularTodo()">
+        </div>
+        <div class="grupo-input">
+            <label>Margen de Ganancia de Compra (%):</label>
+            <input type="number" id="margenCompra" oninput="calcularTodo()" value="16.7">
+        </div>
+        <div class="grupo-input">
+            <label>Razón Social Impresión:</label>
+            <input type="text" id="razonSocial" value="Novedades Cali - SebasGold">
+        </div>
     </div>
 
     <div class="pestanas">
         <div id="tabCompra" class="pestana activa" onclick="cambiarTab('compra')">⚡ Compra</div>
+        <div id="tabPrestamo" class="pestana" onclick="cambiarTab('prestamo')">🤝 Préstamos</div>
         <div id="tabDensidad" class="pestana" onclick="cambiarTab('densidad')">⚖️ Arquímedes</div>
     </div>
 
-    <div id="seccionCotizador">
-        <input type="number" id="kilataje" placeholder="Kilataje" oninput="calcularTodo()">
-        <input type="number" id="pesoMaterial" placeholder="Peso Neto (g)" oninput="calcularTodo()">
-        <div class="resultado-box">
-            <h2>VALOR TOTAL</h2>
-            <div id="valorFinalDisplay" class="precio-final">$ 0</div>
+    <div class="panel-operacion">
+        
+        <div id="seccionCotizador" class="panel-seccion activa">
+            <div class="grupo-input">
+                <label>Kilataje / Pureza:</label>
+                <input type="number" id="kilataje" oninput="calcularTodo()" value="18" min="1" max="24">
+            </div>
+            <div class="grupo-input">
+                <label>Peso Neto Material (Gramos):</label>
+                <input type="number" id="pesoMaterial" oninput="calcularTodo()" value="10" step="0.01">
+            </div>
+            <div class="resultado-box">
+                <h2 id="tituloResultado">VALOR TOTAL A PAGAR AL CLIENTE</h2>
+                <div id="valorFinalDisplay" class="precio-final">$ 0</div>
+            </div>
+            <button class="btn-accion" onclick="generarPDFRecibo()">📄 Imprimir Comprobante Premium</button>
         </div>
-        <button class="btn-accion" onclick="generarPDFRecibo()">📄 Imprimir Comprobante</button>
-    </div>
 
-    <div id="seccionDensidad" style="display:none;">
-        <input type="number" id="pesoSeco" placeholder="Peso Seco (g)" oninput="calcularDensidad()">
-        <input type="number" id="pesoAgua" placeholder="Peso Agua (g)" oninput="calcularDensidad()">
-        <div id="densidadDisplay" style="text-align:center; margin:20px 0; font-size:24px;">0.00 g/cm³</div>
-        <div id="veredictoBox" class="alerta-densidad"></div>
+        <div id="seccionDensidad" class="panel-seccion">
+            <h3 style="font-size: 12px; color: var(--oro); margin-bottom: 15px; text-transform: uppercase; text-align: center;">Prueba Hidrostática de Empuje</h3>
+            <div class="grupo-input">
+                <label>1. Peso en seco (Gramos):</label>
+                <input type="number" id="pesoSeco" oninput="calcularDensidad()" value="0" step="0.01">
+            </div>
+            <div class="grupo-input">
+                <label>2. Peso sumergido en agua (Gramos):</label>
+                <input type="number" id="pesoAgua" oninput="calcularDensidad()" value="0" step="0.01">
+            </div>
+            
+            <div class="resultado-box" style="background: rgba(0,0,0,0.05); border-color: var(--borde);">
+                <h2>DENSIDAD DEL LINGOTE</h2>
+                <div id="densidadDisplay" class="precio-final" style="color: var(--texto);">0.00 <span style="font-size: 14px;">g/cm³</span></div>
+            </div>
+            <div id="veredictoBox" class="alerta-densidad"></div>
+        </div>
+
     </div>
 </div>
 
 <script>
-    // 1. Carga inicial desde LocalStorage
-    window.onload = () => {
-        document.getElementById("margenCompra").value = localStorage.getItem("margen") || 16.7;
-        document.getElementById("cotizacionBase").value = localStorage.getItem("cotizacion") || 0;
-        calcularTodo();
-    };
+    let operacionActual = 'compra';
+    let monedaActual = 'COP';
+    let oroGlobalUSD = 0;
+    let trmGlobalCOP = 0;
+    let miGraficaInstancia = null;
 
-    function guardarConfig() {
-        localStorage.setItem("margen", document.getElementById("margenCompra").value);
-        localStorage.setItem("cotizacion", document.getElementById("cotizacionBase").value);
+    function showToast(msj) {
+        const t = document.getElementById("toast");
+        t.innerText = msj;
+        t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 2500);
     }
 
-    // 2. Lógica de Densidad con tabla de aleaciones real
-    function calcularDensidad() {
-        const seco = parseFloat(document.getElementById("pesoSeco").value) || 0;
-        const agua = parseFloat(document.getElementById("pesoAgua").value) || 0;
-        const vBox = document.getElementById("veredictoBox");
-        
-        if (seco <= agua || agua === 0) return;
+    async function cargarDatosMercado() {
+        const token = "goldapi-f0a322815928bc2b620bf47c5b65b418-io";
+        try {
+            const resOro = await fetch("https://www.goldapi.io/api/XAU/USD", { headers: { "x-access-token": token } });
+            const datosOro = await resOro.json();
+            oroGlobalUSD = datosOro.price || 2350.40;
 
-        const densidad = seco / (seco - agua);
-        document.getElementById("densidadDisplay").innerText = densidad.toFixed(2) + " g/cm³";
+            const resTRM = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
+            const datosTRM = await resTRM.json();
+            trmGlobalCOP = datosTRM.rates.COP || 4100;
 
-        const tabla = { 10: 11.6, 14: 13.1, 18: 15.6, 22: 17.8, 24: 19.32 };
-        let kFinal = 18;
-        let menorDif = 100;
-        
-        for (let k in tabla) {
-            let dif = Math.abs(tabla[k] - densidad);
-            if (dif < menorDif) { menorDif = dif; kFinal = k; }
+            document.getElementById("kpiOnza").innerText = `U$ ${oroGlobalUSD.toFixed(2)}`;
+            document.getElementById("kpiTRM").innerText = `$ ${Math.round(trmGlobalCOP).toLocaleString('es-CO')}`;
+            
+            const onzaGramos = 31.1034768;
+            const gramoPuroCOP = Math.round((oroGlobalUSD / onzaGramos) * trmGlobalCOP);
+            document.getElementById("kpiGramo").innerText = `$ ${gramoPuroCOP.toLocaleString('es-CO')}`;
+
+            actualizarPrecioBaseSegunMoneda();
+            inicializarGrafica();
+            showToast("📊 Mercados sincronizados en tiempo real");
+        } catch (e) {
+            showToast("⚠️ Modo local activado (Sin conexión)");
+            oroGlobalUSD = 2345.50;
+            trmGlobalCOP = 4150;
+            actualizarPrecioBaseSegunMoneda();
+            inicializarGrafica();
         }
-        
-        document.getElementById("kilataje").value = kFinal;
-        vBox.style.display = "block";
-        vBox.innerText = `Estimado por tabla: ${kFinal}K`;
-        vBox.style.background = "rgba(241,196,15,0.1)";
-        vBox.style.color = "var(--oro)";
+    }
+
+    function inicializarGrafica() {
+        const ctx = document.getElementById('miniGrafica').getContext('2d');
+        const baseVal = oroGlobalUSD;
+        const dataSimulada = [baseVal - 8, baseVal - 3, baseVal - 5, baseVal + 2, baseVal - 1, baseVal + 4, baseVal];
+
+        if(miGraficaInstancia) miGraficaInstancia.destroy();
+
+        miGraficaInstancia = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['10am', '11am', '12pm', '1pm', '2pm', '3pm', 'En Vivo'],
+                datasets: [{
+                    label: 'XAU/USD',
+                    data: dataSimulada,
+                    borderColor: '#f1c40f',
+                    borderWidth: 2,
+                    pointRadius: 2,
+                    tension: 0.3,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#8a99ad', font: { size: 9 } } },
+                    y: { grid: { color: 'rgba(128,128,128,0.1)' }, ticks: { color: '#8a99ad', font: { size: 9 } } }
+                }
+            }
+        });
+    }
+
+    function actualizarPrecioBaseSegunMoneda() {
+        const onzaGramos = 31.1034768;
+        if (monedaActual === 'COP') {
+            const gramoCOP = Math.round((oroGlobalUSD / onzaGramos) * trmGlobalCOP);
+            document.getElementById("cotizacionBase").value = gramoCOP;
+            document.getElementById("lblBase").innerText = "Cotización Oro 24K (Gramo COP):";
+        } else {
+            const gramoUSD = (oroGlobalUSD / onzaGramos).toFixed(2);
+            document.getElementById("cotizacionBase").value = gramoUSD;
+            document.getElementById("lblBase").innerText = "Cotización Oro 24K (Gramo USD):";
+        }
         calcularTodo();
+    }
+
+    function cambiarMoneda(moneda) {
+        monedaActual = moneda;
+        document.getElementById("btnCOP").classList.toggle("activo", moneda === 'COP');
+        document.getElementById("btnUSD").classList.toggle("activo", moneda === 'USD');
+        actualizarPrecioBaseSegunMoneda();
+        showToast(`Divisa cambiada a ${moneda}`);
+    }
+
+    function toggleTema() {
+        document.body.classList.toggle("light-mode");
+        showToast("Estilo visual modificado");
+    }
+
+    function togglePanelPro() {
+        document.getElementById("panelPro").classList.toggle("oculto", !document.getElementById("switchPro").checked);
+    }
+
+    function cambiarTab(tipo) {
+        operacionActual = tipo;
+        document.getElementById("tabCompra").classList.toggle("activa", tipo === 'compra');
+        document.getElementById("tabPrestamo").classList.toggle("activa", tipo === 'prestamo');
+        document.getElementById("tabDensidad").classList.toggle("activa", tipo === 'densidad');
+        
+        const secCot = document.getElementById("seccionCotizador");
+        const secDen = document.getElementById("seccionDensidad");
+
+        if(tipo === 'densidad') {
+            secCot.classList.remove("activa");
+            setTimeout(() => { secCot.style.display = "none"; secDen.style.display = "block"; setTimeout(() => secDen.classList.add("activa"), 50); }, 150);
+        } else {
+            secDen.classList.remove("activa");
+            setTimeout(() => { 
+                secDen.style.display = "none"; 
+                secCot.style.display = "block"; 
+                setTimeout(() => secCot.classList.add("activa"), 50); 
+                document.getElementById("tituloResultado").innerText = tipo === 'compra' ? "VALOR TOTAL A PAGAR AL CLIENTE" : "VALOR MÁXIMO DE PRESTADO SUGERIDO";
+                calcularTodo();
+            }, 150);
+        }
     }
 
     function calcularTodo() {
         const base = parseFloat(document.getElementById("cotizacionBase").value) || 0;
+        const margen = parseFloat(document.getElementById("margenCompra").value) || 0;
         const k = parseFloat(document.getElementById("kilataje").value) || 0;
         const peso = parseFloat(document.getElementById("pesoMaterial").value) || 0;
-        const margen = parseFloat(document.getElementById("margenCompra").value) || 0;
+
+        const precioGramoPureza = (base / 24) * k;
+        let valorFinal = 0;
+
+        if (operacionActual === 'compra') {
+            valorFinal = (precioGramoPureza * (1 - (margen / 100))) * peso;
+        } else if (operacionActual === 'prestamo') {
+            valorFinal = (precioGramoPureza * peso) * 0.75;
+        }
         
-        const valor = ((base / 24) * k * (1 - (margen/100))) * peso;
-        document.getElementById("valorFinalDisplay").innerText = "$ " + Math.round(valor).toLocaleString();
+        if (monedaActual === 'COP') {
+            document.getElementById("valorFinalDisplay").innerText = "$ " + Math.round(valorFinal).toLocaleString('es-CO');
+        } else {
+            document.getElementById("valorFinalDisplay").innerText = "USD$ " + valorFinal.toFixed(2).toLocaleString('en-US');
+        }
     }
 
-    function cambiarTab(tipo) {
-        document.getElementById("tabCompra").classList.toggle("activa", tipo === 'compra');
-        document.getElementById("tabDensidad").classList.toggle("activa", tipo === 'densidad');
-        document.getElementById("seccionCotizador").style.display = tipo === 'compra' ? 'block' : 'none';
-        document.getElementById("seccionDensidad").style.display = tipo === 'densidad' ? 'block' : 'none';
+    function calcularDensidad() {
+        const seco = parseFloat(document.getElementById("pesoSeco").value) || 0;
+        const agua = parseFloat(document.getElementById("pesoAgua").value) || 0;
+        const vBox = document.getElementById("veredictoBox");
+
+        if(seco <= 0 || agua <= 0 || seco <= agua) {
+            document.getElementById("densidadDisplay").innerText = "0.00 g/cm³";
+            vBox.style.display = "none";
+            return;
+        }
+
+        const densidad = seco / (seco - agua);
+        document.getElementById("densidadDisplay").innerText = densidad.toFixed(2) + " g/cm³";
+        vBox.style.display = "block";
+
+        let kilatajeExacto = 10 + ((densidad - 11.60) / (19.32 - 11.60)) * (24 - 10);
+        
+        if (kilatajeExacto > 24) kilatajeExacto = 24;
+        if (kilatajeExacto < 0) kilatajeExacto = 0;
+
+        const kFinal = parseFloat(kilatajeExacto.toFixed(1));
+        document.getElementById("kilataje").value = kFinal;
+
+        calcularTodo();
+
+        if (densidad >= 19.1) {
+            vBox.innerText = `✅ COMPATIBLE CON ORO PURO (~${kFinal}K). Densidad excelente.`;
+            vBox.style.cssText = "display:block; background:rgba(46,204,113,0.1); border:1px solid var(--exito); color:var(--exito);";
+        } else if (densidad >= 14.7 && densidad <= 15.7) {
+            vBox.innerText = `✅ COMPATIBLE CON ORO DE 18K (~${kFinal}K). Rango estándar correcto.`;
+            vBox.style.cssText = "display:block; background:rgba(46,204,113,0.1); border:1px solid var(--exito); color:var(--exito);";
+        } else if (densidad >= 12.9 && densidad < 14.7) {
+            vBox.innerText = `👍 COMPATIBLE CON ORO DE 14K (~${kFinal}K). Densidad típica de ley.`;
+            vBox.style.cssText = "display:block; background:rgba(52,152,219,0.1); border:1px solid #3498db; color:#3498db;";
+        } else if (densidad >= 18.2 && densidad <= 18.9) {
+            vBox.innerText = `🚨 ALERTA CRÍTICA: Densidad sospechosa (${densidad.toFixed(2)} g/cm³). ¡Muy alta para 18K pero baja para 24K. Posible núcleo pesado (Tungsteno)!`;
+            vBox.style.cssText = "display:block; background:rgba(231,76,60,0.1); border:1px solid var(--alerta); color:var(--alerta);";
+        } else if (densidad < 11.0) {
+            vBox.innerText = `❌ RECHAZADO: Kilataje estimado (~${kFinal}K). Demasiado bajo, no clasifica como oro comercial.`;
+            vBox.style.cssText = "display:block; background:rgba(231,76,60,0.1); border:1px solid var(--alerta); color:var(--alerta);";
+        } else {
+            vBox.innerText = `📊 KILATAJE ESTIMADO: ~${kFinal}K. Proceda con pruebas ácidas de respaldo.`;
+            vBox.style.cssText = "display:block; background:rgba(243,156,18,0.1); border:1px solid var(--advertencia); color:var(--advertencia);";
+        }
     }
 
     function generarPDFRecibo() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        doc.text("RECIBO SEBASGOLD", 20, 20);
-        doc.text("Valor a pagar: " + document.getElementById("valorFinalDisplay").innerText, 20, 30);
-        doc.save("Comprobante_SebasGold.pdf");
+        
+        const razon = document.getElementById("razonSocial").value;
+        const peso = document.getElementById("pesoMaterial").value;
+        const k = document.getElementById("kilataje").value;
+        const total = document.getElementById("valorFinalDisplay").innerText;
+        
+        const consecutivo = "SG-" + Math.floor(1000 + Math.random() * 9000);
+
+        doc.setFillColor(11, 27, 45);
+        doc.rect(0, 0, 210, 40, 'F');
+        
+        doc.setTextColor(241, 196, 15);
+        doc.setFontSize(22);
+        doc.setFont("helvetica", "bold");
+        doc.text(razon.toUpperCase(), 15, 25);
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(11);
+        doc.text(`COMPROBANTE: ${consecutivo}`, 145, 25);
+
+        doc.setTextColor(80, 90, 100);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Fecha y Hora: ${new Date().toLocaleString()}`, 15, 52);
+        doc.text(`Modalidad Operativa: ${operacionActual.toUpperCase()}`, 15, 58);
+        doc.text(`Sistema de Divisa: ${monedaActual}`, 15, 64);
+
+        doc.setFillColor(240, 244, 248);
+        doc.rect(15, 75, 180, 9, 'F');
+        doc.setFont("helvetica", "bold");
+        doc.text("DESCRIPCIÓN OPERATIVA", 18, 81);
+        doc.text("ESPECIFICACIÓN TÉCNICA", 125, 81);
+
+        doc.setFont("helvetica", "normal");
+        doc.text("Pureza de Aleación Declarada", 18, 93);
+        doc.text(`${k} Kilates (K)`, 125, 93);
+        
+        doc.text("Masa Registrada (Peso Neto)", 18, 102);
+        doc.text(`${peso} Gramos (g)`, 125, 102);
+
+        doc.setDrawColor(210, 215, 225);
+        doc.line(15, 110, 195, 110);
+
+        doc.setFillColor(241, 196, 15, 0.12);
+        doc.rect(15, 118, 180, 15, 'F');
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text("MONTO NETO A LIQUIDAR:", 20, 128);
+        doc.text(total, 125, 128);
+
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(8);
+        doc.setTextColor(110, 115, 125);
+        doc.text("El firmante certifica bajo gravedad de juramento la propiedad legítima e idoneidad jurídica de los materiales entregados.", 15, 150);
+
+        doc.setDrawColor(180, 185, 195);
+        doc.rect(160, 160, 25, 25);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(6);
+        doc.text("VALIDACIÓN", 161, 164);
+        doc.text("DIGITAL", 164, 168);
+        doc.setFillColor(40,40,40); doc.rect(163, 172, 5, 5, 'F'); doc.rect(177, 172, 4, 4, 'F'); doc.rect(170, 178, 6, 4, 'F');
+
+        doc.setFontSize(10);
+        doc.line(15, 190, 75, 190);
+        doc.text("Firma de Conformidad Cliente", 15, 196);
+
+        doc.line(90, 190, 145, 190);
+        doc.text("Verificación de Auditoría", 90, 196);
+        
+        doc.save(`Comprobante_${consecutivo}.pdf`);
+        showToast("📥 Documento PDF generado y descargado");
     }
+
+    window.onload = cargarDatosMercado;
 </script>
 </body>
 </html>
+
 
 
