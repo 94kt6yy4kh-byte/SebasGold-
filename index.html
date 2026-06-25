@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SebasGold Ultra Pro - Sistema de Gestión</title>
+    <!-- Librerías de confianza para PDF y Seguridad -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        :root {
+            --bg: #080c14;
+            --surface: #0f1626;
+            --surface-light: #17223b;
+            --primary: #f59e0b;
+            --primary-hover: #d97706;
+            --text: #f3f4f6;
+            --text-muted: #9ca3af;
+            --success: #10b981;
+            --accent: #2563eb;
+            --private: #8b5cf6;
+            --border: rgba(255, 255, 255, 0.05);
+            --danger: #ef4444;
+            --card-glow: rgba(245, 158, 11, 0.03);
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            padding: 20px 12px; 
+            margin: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .wrapper { max-width: 500px; margin: 0 auto; }
+        
+        /* HEADER PREMIUM */
+        .main-header {
+            background: linear-gradient(145deg, #111827, var(--surface));
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 24px 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+        .main-header::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px;
+            background: linear-gradient(90deg, var(--accent), var(--primary), var(--private));
+        }
+        .brand { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 14px; }
+        .brand h1 { font-size: 30px; color: #fff; margin: 0; font-weight: 900; letter-spacing: 0.5px; }
+        .brand span.gold-txt { color: var(--primary); }
+        
+        .live-ticker {
+            background: rgba(0, 0, 0, 0.4); border-radius: 16px; padding: 10px 18px; 
+            display: inline-flex; align-items: center; gap: 10px; border: 1px solid rgba(245, 158, 11, 0.15);
+        }
+        .pulse-dot { width: 8px; height: 8px; background-color: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        .ticker-value { font-size: 16px; color: var(--primary); font-weight: 800; font-variant-numeric: tabular-nums; }
+        .btn-refresh { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 2px; transition: transform 0.2s; }
+        .btn-refresh:active { transform: rotate(180deg); color: var(--primary); }
+
+        /* PRIVACIDAD BAR */
+        .privacy-bar { 
+            background: rgba(23, 34, 59, 0.6); border: 1px solid var(--border); 
+            padding: 14px 18px; border-radius: 16px; margin-bottom: 20px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            backdrop-filter: blur(8px);
+        }
+        .privacy-title { font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+        
+        .switch { position: relative; display: inline-block; width: 48px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider-toggle { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #374151; transition: .3s; border-radius: 24px; }
+        .slider-toggle:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider-toggle { background-color: var(--primary); }
+        input:checked + .slider-toggle:before { transform: translateX(22px); }
+
+        /* CONTROL DE VISTA ADMIN */
+        .admin-only { display: none !important; }
+        .admin-mode-on .admin-only { display: flex !important; }
+        .admin-block-only { display: none !important; }
+        .admin-mode-on .admin-block-only { display: block !important; }
+
+        /* PESTAÑAS (TABS) */
+        .nav-tabs { display: flex; background: #0f1626; padding: 6px; border-radius: 16px; margin-bottom: 20px; border: 1px solid var(--border); }
+        .tab-link { flex: 1; background: transparent; border: none; color: var(--text-muted); padding: 14px 10px; font-weight: 700; font-size: 13px; border-radius: 12px; cursor: pointer; transition: 0.2s; text-align: center; }
+        .tab-link.active { background: var(--surface-light); color: var(--primary); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+
+        /* PANELES */
+        .panel { background: var(--surface); padding: 22px; border-radius: 24px; box-shadow: 0 16px 48px rgba(0,0,0,0.5); border: 1px solid var(--border); display: none; }
+        .panel.active { display: block; animation: fadeIn 0.25s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        
+        h2 { font-size: 13px; color: var(--text-muted); margin-top: 0; margin-bottom: 22px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; border-left: 3px solid var(--primary); padding-left: 8px; }
+
+        label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        /* CAMPOS DE ENTRADA INTELIGENTES */
+        .input-group { background: var(--surface-light); padding: 16px; border-radius: 18px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.02); }
+        .input-val-display { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+        .input-val-display span:first-child { font-size: 14px; color: #cbd5e1; font-weight: 500; }
+        .input-val-display span:last-child { font-size: 20px; font-weight: 900; color: var(--primary); font-variant-numeric: tabular-nums; }
+        
+        /* SLIDERS DISEÑO PREMIUM */
+        input[type=range] { -webkit-appearance: none; width: 100%; background: var(--bg); height: 8px; border-radius: 6px; outline: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #d97706); cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.5); border: 2px solid var(--surface-light); }
+
+        .k-grid { display: flex; gap: 8px; margin-bottom: 20px; }
+        .k-btn { flex: 1; background: var(--surface-light); border: 2px solid transparent; color: var(--text-muted); padding: 14px 5px; border-radius: 14px; font-weight: 800; font-size: 14px; cursor: pointer; transition: 0.2s; }
+        .k-btn.active { border-color: var(--primary); color: var(--primary); background: rgba(245,158,11, 0.06); }
+
+        .advanced-field { width: 100%; background: var(--surface-light); border: 1px solid rgba(255,255,255,0.06); padding: 14px; border-radius: 14px; color: white; font-size: 15px; box-sizing: border-box; margin-bottom: 16px; outline: none; transition: 0.2s; }
+        .advanced-field:focus { border-color: var(--primary); background: rgba(23,34,59,0.8); }
+
+        /* CONTENEDOR DE RESULTADO FINAL */
+        .summary-box { background: linear-gradient(180deg, rgba(16,185,129,0.02) 0%, rgba(16,185,129,0.06) 100%); border: 1px solid rgba(16,185,129,0.2); padding: 22px; border-radius: 20px; margin-top: 20px; }
+        .summary-box.blue { background: linear-gradient(180deg, rgba(37,99,235,0.02) 0%, rgba(37,99,235,0.06) 100%); border: 1px solid rgba(37,99,235,0.2); }
+        .row-item { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; color: var(--text-muted); align-items: center; }
+        .row-item span:last-child { font-variant-numeric: tabular-nums; }
+        .row-item.total { margin-bottom: 0; padding-top: 14px; border-top: 1px dashed rgba(255,255,255,0.08); color: var(--text); font-weight: 700; }
+        
+        .big-price { font-size: 34px; color: var(--success); font-weight: 900; text-align: center; margin-top: 14px; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
+        .big-price.blue-text { color: #3b82f6; }
+
+        /* BOTONES DE ACCIÓN */
+        .btn-action { width: 100%; padding: 16px; border: none; border-radius: 16px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 18px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+        .btn-action:active { transform: scale(0.98); }
+        .btn-pdf { background: linear-gradient(135deg, var(--accent), #1d4ed8); color: white; box-shadow: 0 4px 14px rgba(37,99,235,0.3); }
+        .btn-secure { background: linear-gradient(135deg, #4c1d95, #6d28d9); color: white; margin-top: 12px; }
+
+        .client-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+
+        /* ESTRUCTURA PROFESIONAL FACTURA PDF */
+        #invoice-template { background: white; color: #111; padding: 40px; font-size: 13px; display: none; }
+        .pdf-header { display: flex; justify-content: space-between; border-bottom: 2px solid #111; padding-bottom: 18px; margin-bottom: 22px; align-items: center; }
+        .pdf-title { font-size: 24px; font-weight: 900; color: #000; text-transform: uppercase; }
+        .pdf-client-section { background: #f4f4f5; padding: 14px; border-radius: 6px; margin-bottom: 22px; line-height: 1.5; }
+        .pdf-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .pdf-table th, .pdf-table td { border: 1px solid #e4e4e7; padding: 12px; text-align: left; }
+        .pdf-table th { background: #f4f4f5; font-weight: 700; text-transform: uppercase; font-size: 11px; color: #444; }
+        .pdf-total-box { margin-top: 30px; text-align: right; font-size: 20px; font-weight: 900; border-top: 2px solid #111; padding-top: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    
+    <!-- HEADER -->
+    <div class="main-header">
+        <div class="brand">
+            <span style="font-size: 30px;">🪙</span>
+            <h1>Sebas<span class="gold-txt">Gold</span></h1>
+        </div>
+        <div class="live-ticker">
+            <div class="pulse-dot"></div>
+            <span style="font-size: 12px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">24K Oficial COP:</span>
+            <span class="ticker-value" id="top-ticker-val">$445.000 gr</span>
+            <button class="btn-refresh" onclick="cargarPrecioOroReal()">🔄</button>
+        </div>
+    </div>
+
+    <!-- SWITCH DE PRIVACIDAD INTELIGENTE -->
+    <div class="privacy-bar">
+        <div class="privacy-title" id="priv-indicator" style="color: #10b981;">
+            🟢 Vista Segura (Modo Cliente Activo)
+        </div>
+        <label class="switch">
+            <input type="checkbox" id="toggle-privacy" onchange="verificarCambioPrivacidad()">
+            <span class="slider-toggle"></span>
+        </label>
+    </div>
+
+    <!-- PESTAÑAS (TABS) -->
+    <div class="nav-tabs">
+        <button class="tab-link active" id="btn-tab-compra" onclick="changeTab('tab-compra')">⚡ Compra de Oro</button>
+        <button class="tab-link" id="btn-tab-credito" onclick="changeTab('tab-credito')">🤝 Préstamos</button>
+        <button class="tab-link" id="btn-tab-ajustes" onclick="solicitarAccesoAjustes()">🔒 Ajustes Pro</button>
+    </div>
+
+    <!-- PANEL 1: COMPRA DE ORO -->
+    <div id="tab-compra" class="panel active">
+        <h2>⚖️ Liquidación Comercial de Metales</h2>
+        <div class="client-form">
+            <div>
+                <label>Nombre Cliente:</label>
+                <input type="text" id="client-name" class="advanced-field" style="margin-bottom:0;" placeholder="Opcional">
+            </div>
+            <div>
+                <label>Identificación / Cédula:</label>
+                <input type="text" id="client-id" class="advanced-field" style="margin-bottom:0;" placeholder="Opcional">
+            </div>
+        </div>
+
+        <label>Kilataje / Pureza:</label>
+        <div class="k-grid">
+            <button class="k-btn" id="k24" onclick="setK(24)">24K</button>
+            <button class="k-btn" id="k22" onclick="setK(22)">22K</button>
+            <button class="k-btn active" id="k18" onclick="setK(18)">18K</button>
+            <button class="k-btn" id="k14" onclick="setK(14)">14K</button>
+        </div>
+
+        <div class="input-group">
+            <div class="input-val-display">
+                <span>Peso Real en Gramos:</span>
+                <span id="lbl-gramos">10.0 gr</span>
+            </div>
+            <input type="range" id="slide-gramos" min="0.1" max="250" value="10" step="0.1" oninput="render()">
+        </div>
+
+        <div class="input-group admin-only">
+            <div class="input-val-display">
+                <span>Porcentaje de Merma:</span>
+                <span id="lbl-merma">0%</span>
+            </div>
+            <input type="range" id="slide-merma" min="0" max="15" value="0" step="0.5" oninput="render()">
+        </div>
+
+        <div class="summary-box">
+            <div class="row-item admin-only">
+                <span>Valor del Gramo Neto Calculado:</span>
+                <span id="res-val-gramo-k" style="color: white; font-weight:600;">$0</span>
+            </div>
+            <div class="row-item admin-only">
+                <span>Gramaje de Oro Fino Neto:</span>
+                <span id="res-peso-fino" style="color: white; font-weight:600;">0 gr</span>
+            </div>
+            <div class="row-item admin-only">
+                <span>Margen Interno de Utilidad:</span>
+                <span id="res-tu-utilidad" style="color: var(--success); font-weight: 800;">$0</span>
+            </div>
+            <div class="row-item total">
+                <span>TOTAL EFECTIVO LIQUIDADO AL CLIENTE:</span>
+            </div>
+            <div class="big-price" id="res-oferta-final">$0</div>
+        </div>
+        <button class="btn-action btn-pdf" onclick="generatePDF('Oro')">📄 Exportar Factura PDF</button>
+    </div>
+
+    <!-- PANEL 2: PRÉSTAMOS -->
+    <div id="tab-credito" class="panel">
+        <h2>💰 Simulador Prendario Prenda/Garantía</h2>
+        <div class="input-group">
+            <div class="input-val-display">
+                <span>Capital Solicitado:</span>
+                <span id="lbl-monto">$1.000.000</span>
+            </div>
+            <input type="range" id="slide-monto" min="50000" max="40000000" value="1000000" step="50000" oninput="render()">
+        </div>
+
+        <div class="input-group">
+            <div class="input-val-display">
+                <span>Término / Plazo Máximo:</span>
+                <span id="lbl-plazo">1 Mes</span>
+            </div>
+            <input type="range" id="slide-plazo" min="1" max="12" value="1" step="1" oninput="render()">
+        </div>
+
+        <div class="summary-box blue">
+            <div class="row-item admin-only">
+                <span>Interés Mensual Pactado:</span>
+                <span id="res-loan-int" style="color:white;">$0</span>
+            </div>
+            <div class="row-item admin-only">
+                <span>Seguro, Custodia y Bodegaje:</span>
+                <span id="res-loan-cust" style="color:white;">$0</span>
+            </div>
+            <div class="row-item">
+                <span>Costo de Sostenimiento Mensual:</span>
+                <span id="res-loan-mes-total" style="color: #60a5fa; font-weight:800;">$0</span>
+            </div>
+            <div class="row-item total">
+                <span>MONTO TOTAL REQUERIDO PARA RETIRO:</span>
+            </div>
+            <div class="big-price blue-text" id="res-loan-final">$0</div>
+        </div>
+        <button class="btn-action btn-pdf" onclick="generatePDF('Préstamo')">📄 Crear Comprobante de Empeño</button>
+    </div>
+
+    <!-- PANEL 3: AJUSTES PROTEGIDOS -->
+    <div id="tab-ajustes" class="panel">
+        <h2>⚙️ Panel de Operación y Parámetros del Sistema</h2>
+        <label>Cotización Base Oro 24K (Por Gramo COP):</label>
+        <input type="number" id="cfg-p24" class="advanced-field" value="445000" oninput="render(); guardarParametrosLocal();">
+        <span style="font-size:11px; color:var(--success); display:block; margin-top:-10px; margin-bottom:18px; font-weight:500;" id="api-indicator">🔄 Verificando servidores...</span>
+        
+        <label>Margen de Ganancia de Compra (%):</label>
+        <input type="number" id="cfg-margen" class="advanced-field" value="15" oninput="render(); guardarParametrosLocal();">
+
+        <div style="display:flex; gap:12px;">
+            <div style="flex:1;">
+                <label>Interés Mensual (%):</label>
+                <input type="number" id="cfg-int" class="advanced-field" value="4" oninput="render(); guardarParametrosLocal();">
+            </div>
+            <div style="flex:1;">
+                <label>Custodia/Seguro (%):</label>
+                <input type="number" id="cfg-cust" class="advanced-field" value="1" oninput="render(); guardarParametrosLocal();">
+            </div>
+        </div>
+        
+        <label>Razón Social en Factura:</label>
+        <input type="text" id="cfg-empresa" class="advanced-field" value="SebasGold Transacciones" oninput="guardarParametrosLocal();">
+
+        <hr style="border: 0; border-top: 1px dashed var(--border); margin: 22px 0;">
+        <button class="btn-action btn-secure" onclick="modificarClaveMaestra()">🔑 Cambiar Contraseña del Administrador</button>
+    </div>
+</div>
+
+<!-- FORMATO DOCUMENTO IMPRESIÓN PDF -->
+<div id="invoice-template">
+    <div class="pdf-header">
+        <div>
+            <div class="pdf-title" id="pdf-brand-name">SebasGold</div>
+            <div style="color: #52525b; margin-top:4px; font-size:12px; font-weight: 500;">Control y Compraventa de Metales Preciosos</div>
+        </div>
+        <div style="text-align: right; font-size:11px; color: #27272a; line-height: 1.4;">
+            <strong>COMPROBANTE DE TRANSACCIÓN</strong><br>
+            Fecha: <span id="pdf-fecha">--/--/----</span><br>
+            Hora: <span id="pdf-hora">--:--</span>
+        </div>
+    </div>
+    <div class="pdf-client-section">
+        <strong>INFORMACIÓN GENERAL DE REFERENCIA:</strong><br>
+        <span id="pdf-client-info">Nombre: Público General</span>
+    </div>
+    <table class="pdf-table">
+        <thead>
+            <tr>
+                <th style="width: 40%;">Operación Comercial</th>
+                <th style="width: 35%;">Detalles Técnicos</th>
+                <th style="width: 25%;">Valor Neto</th>
+            </tr>
+        </thead>
+        <tbody id="pdf-table-content"></tbody>
+    </table>
+    <div class="pdf-total-box">
+        VALOR TOTAL ACORDADO: <span id="pdf-total-grand">$0</span>
+    </div>
+    <div style="margin-top: 40px; text-align: center; font-size: 10px; color: #71717a; border-top: 1px solid #e4e4e7; padding-top: 15px;">
+        Documento generado de manera digital como soporte interno de control comercial.
+    </div>
+</div>
+
+<script>
+let currentK = 18;
+let globalOfertaOro = 0;
+let globalTotalPrestamo = 0;
+let sesionAdminActiva = false;
+let temporizadorSesion;
+
+// HASH CRIPTOGRÁFICO DE SEGURIDAD (Por defecto clave: 1234)
+let hashClaveAlmacenada = localStorage.getItem('sg_secured_hash') || "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
+
+window.onload = function() {
+    recuperarParametrosLocal();
+    render();
+    setTimeout(cargarPrecioOroReal, 300);
+};
+
+// API ESTABLE MUNDIAL ACTUALIZADA
+async function cargarPrecioOroReal() {
+    const indicador = document.getElementById('api-indicator');
+    const topTicker = document.getElementById('top-ticker-val');
+    const inputP24 = document.getElementById('cfg-p24');
+    
+    try {
+        let response = await fetch('https://open.er-api.com/v6/latest/USD');
+        let data = await response.json();
+        
+        if (data && data.rates && data.rates.COP) {
+            let trmActual = data.rates.COP;
+            // Cotización promedio internacional del Oro por onza troy (~2345 USD)
+            let precioGramoCalculado = Math.round((2345 / 31.1034) * trmActual);
+            
+            if (precioGramoCalculado > 200000) {
+                inputP24.value = precioGramoCalculado;
+                topTicker.innerText = "$" + precioGramoCalculado.toLocaleString('es-CO') + " gr";
+                indicador.innerText = "⚡ Sincronizado automáticamente (TRM: $" + Math.round(trmActual).toLocaleString('es-CO') + ")";
+                indicador.style.color = "#10b981";
+                render();
+                return;
+            }
+        }
+    } catch (e) {
+        topTicker.innerText = "$" + parseInt(inputP24.value).toLocaleString('es-CO') + " gr";
+        indicador.innerText = "⚠️ Usando precios locales almacenados.";
+        indicador.style.color = "#f59e0b";
+    }
+}
+
+function iniciarTemporizadorSesion() {
+    clearTimeout(temporizadorSesion);
+    temporizadorSesion = setTimeout(() => {
+        cerrarModoAdmin();
+        alert("🔒 Por tu seguridad, la sesión de administrador ha expirado.");
+    }, 300000); // Bloqueo automático estricto a los 5 minutos sin actividad
+}
+
+function verificarCambioPrivacidad() {
+    let isChecked = document.getElementById('toggle-privacy').checked;
+    if (isChecked) {
+        let pass = prompt("Ingresa la Contraseña de Administrador para ver datos privados:");
+        if (CryptoJS.SHA256(pass).toString() === hashClaveAlmacenada) {
+            activarModoAdmin();
+        } else {
+            alert("Contraseña incorrecta.");
+            document.getElementById('toggle-privacy').checked = false;
+        }
+    } else {
+        cerrarModoAdmin();
+    }
+}
+
+function activarModoAdmin() {
+    sesionAdminActiva = true;
+    document.body.classList.add('admin-mode-on');
+    document.getElementById('toggle-privacy').checked = true;
+    let ind = document.getElementById('priv-indicator');
+    ind.innerText = "👁️ Panel Oculto (Vista Pro Activa)";
+    ind.style.color = "#8b5cf6";
+    iniciarTemporizadorSesion();
+}
+
+function cerrarModoAdmin() {
+    sesionAdminActiva = false;
+    document.body.classList.remove('admin-mode-on');
+    document.getElementById('toggle-privacy').checked = false;
+    let ind = document.getElementById('priv-indicator');
+    ind.innerText = "🟢 Vista Segura (Modo Cliente Activo)";
+    ind.style.color = "#10b981";
+    if(document.getElementById('tab-ajustes').classList.contains('active')) {
+        changeTab('tab-compra');
+    }
+    clearTimeout(temporizadorSesion);
+}
+
+function solicitarAccesoAjustes() {
+    if (sesionAdminActiva) {
+        changeTab('tab-ajustes');
+        iniciarTemporizadorSesion();
+    } else {
+        let pass = prompt("🔒 Área protegida. Digita la clave de acceso:");
+        if (CryptoJS.SHA256(pass).toString() === hashClaveAlmacenada) {
+            activarModoAdmin();
+            changeTab('tab-ajustes');
+        } else {
+            alert("Clave denegada.");
+        }
+    }
+}
+
+function changeTab(panelId) {
+    document.querySelectorAll('.tab-link').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    
+    document.getElementById(panelId).classList.add('active');
+    if (panelId === 'tab-compra') document.getElementById('btn-tab-compra').classList.add('active');
+    if (panelId === 'tab-credito') document.getElementById('btn-tab-credito').classList.add('active');
+    if (panelId === 'tab-ajustes') document.getElementById('btn-tab-ajustes').classList.add('active');
+    
+    if (sesionAdminActiva) iniciarTemporizadorSesion();
+}
+
+function setK(val) {
+    currentK = val;
+    document.querySelectorAll('.k-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('k' + val).classList.add('active');
+    render();
+    if (sesionAdminActiva) iniciarTemporizadorSesion();
+}
+
+function render() {
+    let p24k = parseFloat(document.getElementById('cfg-p24').value) || 0;
+    let margenComercial = (parseFloat(document.getElementById('cfg-margen').value) || 0) / 100;
+    let tInteres = (parseFloat(document.getElementById('cfg-int').value) || 0) / 100;
+    let tCustodia = (parseFloat(document.getElementById('cfg-cust').value) || 0) / 100;
+
+    let gramos = parseFloat(document.getElementById('slide-gramos').value);
+    let merma = parseFloat(document.getElementById('slide-merma').value);
+    document.getElementById('lbl-gramos').innerText = gramos.toFixed(1) + " gr";
+    document.getElementById('lbl-merma').innerText = merma + "%";
+
+    let pesoNeto = gramos * (1 - (merma/100));
+    let precioRealPorGramo = p24k * (currentK / 24);
+    let valorMetalTotal = precioRealPorGramo * pesoNeto;
+    globalOfertaOro = valorMetalTotal * (1 - margenComercial);
+    let gananciaCalculada = valorMetalTotal - globalOfertaOro;
+
+    document.getElementById('res-val-gramo-k').innerText = "$" + Math.round(precioRealPorGramo).toLocaleString('es-CO');
+    document.getElementById('res-peso-fino').innerText = pesoNeto.toFixed(2) + " gr";
+    document.getElementById('res-tu-utilidad').innerText = "+ $" + Math.round(gananciaCalculada).toLocaleString('es-CO');
+    document.getElementById('res-oferta-final').innerText = "$" + Math.round(globalOfertaOro).toLocaleString('es-CO');
+
+    let monto = parseInt(document.getElementById('slide-monto').value);
+    let plazo = parseInt(document.getElementById('slide-plazo').value);
+    document.getElementById('lbl-monto').innerText = "$" + monto.toLocaleString('es-CO');
+    document.getElementById('lbl-plazo').innerText = plazo + (plazo === 1 ? " Mes" : " Meses");
+
+    let valIntMes = monto * tInteres;
+    let valCustMes = monto * tCustodia;
+    let costoMesTotal = valIntMes + valCustMes;
+    globalTotalPrestamo = monto + (costoMesTotal * plazo);
+
+    document.getElementById('res-loan-int').innerText = "$" + Math.round(valIntMes).toLocaleString('es-CO');
+    document.getElementById('res-loan-cust').innerText = "$" + Math.round(valCustMes).toLocaleString('es-CO');
+    document.getElementById('res-loan-mes-total').innerText = "$" + Math.round(costoMesTotal).toLocaleString('es-CO');
+    document.getElementById('res-loan-final').innerText = "$" + Math.round(globalTotalPrestamo).toLocaleString('es-CO');
+}
+
+function guardarParametrosLocal() {
+    localStorage.setItem('sg_cfg_margen', document.getElementById('cfg-margen').value);
+    localStorage.setItem('sg_cfg_int', document.getElementById('cfg-int').value);
+    localStorage.setItem('sg_cfg_cust', document.getElementById('cfg-cust').value);
+    localStorage.setItem('sg_cfg_empresa', document.getElementById('cfg-empresa').value);
+}
+
+function recuperarParametrosLocal() {
+    if(localStorage.getItem('sg_cfg_margen')) {
+        document.getElementById('cfg-margen').value = localStorage.getItem('sg_cfg_margen');
+        document.getElementById('cfg-int').value = localStorage.getItem('sg_cfg_int');
+        document.getElementById('cfg-cust').value = localStorage.getItem('sg_cfg_cust');
+        document.getElementById('cfg-empresa').value = localStorage.getItem('sg_cfg_empresa');
+    }
+}
+
+function modificarClaveMaestra() {
+    let claveActual = prompt("Escribe tu contraseña ACTUAL:");
+    if (CryptoJS.SHA256(claveActual).toString() === hashClaveAlmacenada) {
+        let nuevaClave = prompt("Escribe tu NUEVA contraseña (mínimo 4 números):");
+        if(nuevaClave && nuevaClave.trim().length >= 4) {
+            hashClaveAlmacenada = CryptoJS.SHA256(nuevaClave).toString();
+            localStorage.setItem('sg_secured_hash', hashClaveAlmacenada);
+            alert("🔒 Contraseña de administrador cambiada correctamente.");
+            iniciarTemporizadorSesion();
+        } else {
+            alert("Error: Contraseña muy corta.");
+        }
+    } else {
+        alert("Clave actual incorrecta.");
+    }
+}
+
+function generatePDF(tipo) {
+    let nombreEmpresa = document.getElementById('cfg-empresa').value;
+    document.getElementById('pdf-brand-name').innerText = nombreEmpresa;
+    let cName = document.getElementById('client-name').value || "Público General";
+    let cId = document.getElementById('client-id').value || "No Registrado";
+    document.getElementById('pdf-client-info').innerHTML = `<strong>Titular/Interesado:</strong> ${cName} <br><strong>Documento / NIT:</strong> ${cId}`;
+
+    let ahora = new Date();
+    document.getElementById('pdf-fecha').innerText = ahora.toLocaleDateString('es-CO');
+    document.getElementById('pdf-hora').innerText = ahora.toLocaleTimeString('es-CO', {hour: '2-digit', minute:'2-digit'});
+
+    let tableContent = "";
+    if (tipo === 'Oro') {
+        tableContent = `<tr><td><strong>Compra y Liquidación de Oro</strong></td><td>Pureza Seleccionada: ${currentK}K<br>Peso Bruto: ${document.getElementById('slide-gramos').value} gr</td><td><strong>$${Math.round(globalOfertaOro).toLocaleString('es-CO')}</strong></td></tr>`;
+    } else {
+        tableContent = `<tr><td><strong>Simulación de Crédito Prendario</strong></td><td>Capital Inicial base: $${parseInt(document.getElementById('slide-monto').value).toLocaleString('es-CO')}<br>Plazo Estimado: ${document.getElementById('slide-plazo').value} Mes(es)</td><td><strong>$${Math.round(globalTotalPrestamo).toLocaleString('es-CO')}</strong></td></tr>`;
+    }
+    document.getElementById('pdf-table-content').innerHTML = tableContent;
+    document.getElementById('pdf-total-grand').innerText = tipo === 'Oro' ? "$" + Math.round(globalOfertaOro).toLocaleString('es-CO') : "$" + Math.round(globalTotalPrestamo).toLocaleString('es-CO');
+
+    let element = document.getElementById('invoice-template');
+    element.style.display = 'block';
+    
+    let opcionesConfig = {
+        margin: 15,
+        filename: 'Recibo_' + tipo + '_' + ahora.getTime() + '.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opcionesConfig).from(element).save().then(() => { 
+        element.style.display = 'none'; 
+    });
+    
+    if (sesionAdminActiva) iniciarTemporizadorSesion();
+}
+</script>
+</body>
+</html>
